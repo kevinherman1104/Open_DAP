@@ -11,11 +11,13 @@ function Item(props) {
   const [owner, setOwner] = useState();
   const [image, setImage] = useState();
 
-  const id = Principal.fromText(props.id);
+  const id = props.id;
 
   const localHost = "http://localhost:8080/";
   const agent = new HttpAgent({host: localHost}) ; //make request to canister using HTTP method from the localhost
 
+
+  //Async function to load the NFTs based on the idlFactory we imported above
   async function loadNFT(){
     const NFTActor = await Actor.createActor(idlFactory, {
       agent,
@@ -35,7 +37,7 @@ function Item(props) {
 
 
   }
-
+  // Use Effect method to call the loadNFT function
   useEffect(()=> {
     loadNFT();
 
