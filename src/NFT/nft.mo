@@ -38,7 +38,7 @@ actor class NFT(name: Text, owner: Principal, content: [Nat8]) = this{
             return "Success"
 
         }else{
-            return "Error: Not initiated by NFT owner"
+            return "Error: Not initiated by NFT owner!"
         }
 
     }

@@ -122,9 +122,17 @@ actor OpenD {
 
     };
 
-    //function to get the principaID of the Canister
+    //function to get the principal ID of the Canister
     public query func getOpenDCanisterID(): async Principal{
         return Principal.fromActor(OpenD);
     };
+
+    public query func isListed(nftID: Principal): async Bool{
+        if(mapOfListings.get(nftID) == null){
+            return false;
+        } else{
+            return true;
+        }
+    }
  
 };
