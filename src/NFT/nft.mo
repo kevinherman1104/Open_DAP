@@ -5,9 +5,9 @@ import Principal "mo:base/Principal";
 //Each time we create new instance of NFT a new principal ID will be assigned to the corresponding NFT
 actor class NFT(name: Text, owner: Principal, content: [Nat8]) = this{
     
-    let itemName = name;
-    let nftowner =  owner;
-    let imageBytes = content;
+    private let itemName = name;
+    private var nftOwner =  owner;
+    private let imageBytes = content;
 
     //function created which is going to allow us to get hold of the NFT name.
     public query func getName () : async Text{
@@ -16,7 +16,7 @@ actor class NFT(name: Text, owner: Principal, content: [Nat8]) = this{
 
     //function created which is going to allow us to get hold of the NFT owner Principal.
      public query func getOwner () : async Principal{
-        return nftowner;
+        return nftOwner;
     };
 
     //function created which is going to allow us to get hold of the NFT image data.
@@ -27,6 +27,20 @@ actor class NFT(name: Text, owner: Principal, content: [Nat8]) = this{
      //function created which is going to allow us to get hold of the canister ID.
     public query func getCanisterId(): async Principal{
         return Principal.fromActor(this); //returns the principal of the corresponding actor (which points to the NFT actor class)
+    };
+    
+    //function to transfer the ownership of one NFT owner to another
+    public shared(msg) func transferOwnership(newOwner: Principal): async Text{
+        //Verify whether the owner of the NFT is the one calling up the function
+        if(msg.caller == nftOwner){
+            nftOwner := newOwner;
+
+            return "Success"
+
+        }else{
+            return "Error: Not initiated by NFT owner"
+        }
+
     }
    
 

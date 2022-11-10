@@ -26,7 +26,7 @@ function Minter() {
     setNFTPrincipal(newNFTID);
 
     setLoaderHidden(true);
-    console.log(newNFTID.toText());
+    // console.log(newNFTID.toText());
 
 
 

@@ -8,6 +8,14 @@ import List "mo:base/List"
 
 actor OpenD {
 
+    // Custom type that represents each NFTs owner and Pric
+    private type Listing = {
+        itemOwner: Principal;
+        itemPrice: Nat;
+
+
+    };
+
     //Creating Hashmap to store all the NFTS along with their owner in form of principal ID, Principal.equal ceks for duplication, Principal.hash Hashes the ID that will be stored in the hashmap.
     var mapOfNFTs = HashMap.HashMap<Principal, NFTActorClass.NFT>(1, Principal.equal, Principal.hash);
     
@@ -16,6 +24,10 @@ actor OpenD {
     // So user will have more than one NFTs with different canister IDs
     var mapOfOwners = HashMap.HashMap<Principal, List.List<Principal>>(1, Principal.equal, Principal.hash);
 
+    //Creating Hashmap to contain all the listed NFTs
+    //The first parameter will be the principal ID of the listed NFTs
+    //The second parameter will be a custom type, because it will hold a bunchof information
+    var mapOfListings = HashMap.HashMap<Principal, Listing>(1, Principal.equal, Principal.hash);
 
 
     //shared keyword is used for us to get the identity of the user who called the mint functionn, in the form of principal data type
@@ -78,8 +90,41 @@ actor OpenD {
             case (?result) result;
         };
 
+        //Create an array that contains id of user NFTs retrieved from the list.
         return List.toArray(userNFTs);
 
-    }
+    };
+
+    public shared(msg) func listItem(id: Principal, price: Nat): async Text{
+        //Verify whether the item exist or not based on the canister id, if yes assign it to the item variable
+        var item: NFTActorClass.NFT = switch(mapOfNFTs.get(id)){
+            case null return "NFT does not exist";
+            case (?result) result;
+        };
+
+        //Get hold of the owner of the NFT that we are trying to list.
+        
+        let owner = await item.getOwner();
+
+        //Verify the corresponding NFT that is going to be listed whether it has the real owner attached to the one's calling the function (msg.caller)
+        if (Principal.equal(owner, msg.caller)){
+            let newListing: Listing = {
+                itemOwner = owner;
+                itemPrice = price;
+            };
+            //listing the NFT into the hashmap of listings.
+            mapOfListings.put(id, newListing);
+            return "Success";
+
+        } else{
+            return "You do not own the NFT"
+        }
+
+    };
+
+    //function to get the principaID of the Canister
+    public query func getOpenDCanisterID(): async Principal{
+        return Principal.fromActor(OpenD);
+    };
  
 };
