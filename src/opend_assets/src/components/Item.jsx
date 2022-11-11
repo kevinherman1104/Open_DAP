@@ -5,6 +5,8 @@ import {idlFactory} from"../../../declarations/nft" // for our back end (MOTOKO)
 import {Principal} from "@dfinity/principal"
 import Button from "./Button";
 import { opend } from "../../../declarations/opend/index";
+import CURRENT_USER_ID from "../index";
+import PriceLabel from "./PriceLabel";
 
 
 function Item(props) {
@@ -17,7 +19,7 @@ function Item(props) {
   const [loaderHidden, setLoaderHidden] = useState(true);
   const [blur, setBlur] = useState();
   const [sellStatus, setSellStatus] = useState();
-
+  const [priceLabel, setPriceLabel] = useState();
   //Holds the NFT id of each item
   const id = props.id;
 
@@ -27,6 +29,8 @@ function Item(props) {
 
   //TODO: remove the following line, when deploying live 
   agent.fetchRootKey();
+
+  // Variable to store the NFT from the id passed to id props of Item component
   let NFTActor;
 
   //Async function to load the NFTs based on the idlFactory we imported above
@@ -36,6 +40,7 @@ function Item(props) {
       canisterId: id,
     });
 
+    //Setting the property of each NFT Item retrieved from the NFTActor variable
     const name = await NFTActor.getName();
     setName(name);
 
@@ -47,20 +52,30 @@ function Item(props) {
     const image = URL.createObjectURL(new Blob([imageContent.buffer], { type: "image/png" })); // to create image URL for our converted NAT8 array from backend
     setImage(image);
 
-
-    const nftIsListed = await opend.isListed(props.id);
+    //Checking whether the Item is listed as collection or listed for sell
+    if(props.role == "collection"){
+      const nftIsListed = await opend.isListed(props.id);
     
-    if(nftIsListed){
-      setOwner("OpenD");
-      setBlur({filter: "blur(4px)"});
-      setSellStatus("Listed")
+      if(nftIsListed){
+        setOwner("OpenD");
+        setBlur({filter: "blur(4px)"});
+        setSellStatus("Listed")
 
-    } else{
-      setButton(<Button handleClick={handleSell} text={"Sell"}/>)
+      } else{
+        setButton(<Button handleClick={handleSell} text={"Sell"}/>)
+      }
+    }else if(props.role == "discover"){
+      const originalOwner = await opend.getOriginalOwner(props.id);
+      if(originalOwner.toText() != CURRENT_USER_ID.toText()){
+        setButton(<Button handleClick={handleBuy} text={"Buy"}/>)
+      }
+
+      const price =  await opend.getListedNFTPrice(props.id);
+      setPriceLabel(<PriceLabel sellPrice={price.toString()}/>)
+
+      
     }
     
-    
-
 
   }
   // Use Effect method to call the loadNFT function
@@ -112,6 +127,12 @@ function Item(props) {
 
   }
 
+  //function to handle buy button gets clicked by user
+  async function handleBuy(){
+    console.log("Buy!")
+
+  }
+
   
   return (
     <div className="disGrid-item">
@@ -128,6 +149,7 @@ function Item(props) {
           <div></div>
         </div>
         <div className="disCardContent-root">
+          {priceLabel}
           <h2 className="disTypography-root makeStyles-bodyText-24 disTypography-h5 disTypography-gutterBottom">
             {name}
             <span className="purple-text"> {sellStatus}</span>

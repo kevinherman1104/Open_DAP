@@ -3,7 +3,8 @@ import NFTActorClass "../NFT/nft";
 import Cycles "mo:base/ExperimentalCycles";
 import Debug "mo:base/Debug";
 import HashMap "mo:base/HashMap";
-import List "mo:base/List"
+import List "mo:base/List";
+import Iter "mo:base/Iter";
 // import NFT "../NFT/nft";
 
 actor OpenD {
@@ -95,6 +96,12 @@ actor OpenD {
 
     };
 
+    //function created that will return list of NFTs Principal ID in form of a List
+    public query func getListedNFTs(): async [Principal]{
+        let ids = Iter.toArray(mapOfListings.keys());
+        return ids;
+    };
+
     public shared(msg) func listItem(id: Principal, price: Nat): async Text{
         //Verify whether the item exist or not based on the canister id, if yes assign it to the item variable
         var item: NFTActorClass.NFT = switch(mapOfNFTs.get(id)){
@@ -127,12 +134,35 @@ actor OpenD {
         return Principal.fromActor(OpenD);
     };
 
+    //function to check whether the NFT has been listed or not
     public query func isListed(nftID: Principal): async Bool{
         if(mapOfListings.get(nftID) == null){
             return false;
         } else{
             return true;
         }
+    };
+
+    public query func getOriginalOwner(id : Principal) : async Principal{
+        var listing : Listing =  switch(mapOfListings.get(id)){
+            case null return Principal.fromText("");
+            case (?result) result;
+        };
+
+        return listing.itemOwner;
+
+    };
+
+    public query func getListedNFTPrice(id : Principal) : async Nat{
+        var listing : Listing =  switch(mapOfListings.get(id)){
+            case null return 0;
+            case (?result) result;
+        };
+
+        return listing.itemPrice;
+
     }
+
+    
  
 };

@@ -6,12 +6,13 @@ function Gallery(props) {
 
   const [items, setItems] = useState();
 
+
   //function to render each Item based on the NFT IDS from props
   function fetchNFTs(){
     if(props.ids != undefined){
       setItems(
         props.ids.map( (NFTId)=>(
-          <Item id = {NFTId} key={NFTId.toText()}/>
+          <Item id = {NFTId} key={NFTId.toText()} role={props.role}/>
         ))
       )
     }
