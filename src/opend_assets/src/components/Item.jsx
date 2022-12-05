@@ -2,11 +2,13 @@ import React, { useEffect, useState } from "react";
 import logo from "../../assets/logo.png";
 import {Actor, HttpAgent} from "@dfinity/agent"
 import {idlFactory} from"../../../declarations/nft" // for our back end (MOTOKO) to communicate with the JavaScript
+import {idlFactory as tokenIdlFactory} from "../../../declarations/token";// for our back end (Token Project) to communicate with the JavaScript
 import {Principal} from "@dfinity/principal"
 import Button from "./Button";
 import { opend } from "../../../declarations/opend/index";
 import CURRENT_USER_ID from "../index";
 import PriceLabel from "./PriceLabel";
+import { token } from "../../../declarations/token/index";
 
 
 function Item(props) {
@@ -20,6 +22,8 @@ function Item(props) {
   const [blur, setBlur] = useState();
   const [sellStatus, setSellStatus] = useState();
   const [priceLabel, setPriceLabel] = useState();
+  const [shouldDisplay, setDisplay] = useState(true);
+
   //Holds the NFT id of each item
   const id = props.id;
 
@@ -129,13 +133,34 @@ function Item(props) {
 
   //function to handle buy button gets clicked by user
   async function handleBuy(){
-    console.log("Buy!")
+    // console.log("Buy!")
+    setLoaderHidden(false);
+
+    //create an instance of the token actor so we can make use of the transfer function
+    const tokenActor = await Actor.createActor(tokenIdlFactory, {
+      agent,
+      canisterId: Principal.fromText("q4eej-kyaaa-aaaaa-aaaha-cai"), //token ID retrieved from the Token Project
+    });
+
+    const sellerId = await opend.getOriginalOwner(props.id);
+    const itemPrice = await opend.getListedNFTPrice(props.id)
+
+    //Making use of Token Project's Transfer method
+    const resultTransfer = await tokenActor.transfer(sellerId, itemPrice);
+
+    if (resultTransfer == "Success"){
+      //Transfer the ownership
+      const result = await opend.completePurchase(props.id, sellerId, CURRENT_USER_ID);
+      console.log("Purchase: " + result)
+      setLoaderHidden(true);
+      setDisplay(false)
+    }
 
   }
 
   
   return (
-    <div className="disGrid-item">
+    <div style={{display: shouldDisplay ? "inline" : "none"}} className="disGrid-item">
       <div className="disPaper-root disCard-root makeStyles-root-17 disPaper-elevation1 disPaper-rounded">
         <img
           className="disCardMedia-root makeStyles-image-19 disCardMedia-media disCardMedia-img"

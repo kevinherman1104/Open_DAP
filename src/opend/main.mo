@@ -16,8 +16,9 @@ actor OpenD {
 
 
     };
+    
 
-    //Creating Hashmap to store all the NFTS along with their owner in form of principal ID, Principal.equal ceks for duplication, Principal.hash Hashes the ID that will be stored in the hashmap.
+    //Creating Hashmap to store all the NFTS along with their owner in form of principal ID, Principal.equal checks for duplication, Principal.hash Hashes the ID that will be stored in the hashmap.
     var mapOfNFTs = HashMap.HashMap<Principal, NFTActorClass.NFT>(1, Principal.equal, Principal.hash);
     
     //Creating Hashmap to store all the Owner of the NFTs, so we can later on map them within their lists of NFTs 
@@ -143,6 +144,7 @@ actor OpenD {
         }
     };
 
+    //function to get the original owner of the NFT
     public query func getOriginalOwner(id : Principal) : async Principal{
         var listing : Listing =  switch(mapOfListings.get(id)){
             case null return Principal.fromText("");
@@ -153,6 +155,7 @@ actor OpenD {
 
     };
 
+    //function to get price of the listed NFT for sell
     public query func getListedNFTPrice(id : Principal) : async Nat{
         var listing : Listing =  switch(mapOfListings.get(id)){
             case null return 0;
@@ -161,7 +164,50 @@ actor OpenD {
 
         return listing.itemPrice;
 
-    }
+    };
+
+
+    //function to making sure that the purchase is success and transfer the ownership
+    public shared(msg) func completePurchase(id: Principal, ownerId: Principal, newOwnerId: Principal): async Text{
+        var purchasedNFT: NFTActorClass.NFT =  switch(mapOfNFTs.get(id)){
+            case null return "NFT does not exist";
+            case (?result) result;
+            
+        };
+        
+        let transferResult = await purchasedNFT.transferOwnership(newOwnerId);
+        if (transferResult == "Success"){
+            //Simply deletes the id of the purchased NFT from mapOfListings
+            mapOfListings.delete(id);
+
+            //declare list of ownedNFTs of the current user
+            var ownedNFTS: List.List<Principal> = switch(mapOfOwners.get(ownerId)){
+                case null List.nil<Principal>();
+                case (?result) result;
+            };
+
+
+            // Loops through all of the list items, for each of the list items they get checked. 
+            // And if that list item does not equal the ID of the NFT that's being purchased, then we're going to return true.
+            // Otherwise, we're going to return false.
+            // When true is returned, then that particular NFT id will get added to the new list.
+            // And if it returns false, then that particular id will be omitted from the new list.
+            //Simply takes the corresponding NFT and remove it from the list of ownedNFTs
+            ownedNFTS := List.filter(ownedNFTS, func (listItemId: Principal): Bool{
+                return listItemId != id;
+            });
+
+            addToOwnershipMap(newOwnerId, id);
+            return "Success";
+
+        } else{
+            return transferResult;
+        }
+
+        
+
+
+    };
 
     
  
